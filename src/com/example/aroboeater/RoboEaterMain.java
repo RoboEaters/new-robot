@@ -32,7 +32,6 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider{
 	TextView mountX, mountY, motorPW, wheelPW,frontIR,backIR,sideRIR,sideLIR,diagRIR,diagLIR;
 	FrameLayout frame;
 	LinearLayout UI;
-	Controller viewScreen;
 	
 	//Threadings
 	IOIOThread ioio_thread;

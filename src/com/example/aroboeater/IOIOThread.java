@@ -13,9 +13,8 @@ public class IOIOThread extends BaseIOIOLooper
 		private PwmOutput pwmOutputy;
 		private PwmOutput motorOutput;
 		private PwmOutput wheelOutput;
-		private DigitalOutput led_;
 		private static RoboEaterMain the_gui;
-		private static ServoCalculations servos;
+		private static WallFollowingCalculations servos;
 		 //600 TO 2500 
 		
 		boolean goingBackwards;
@@ -24,7 +23,7 @@ public class IOIOThread extends BaseIOIOLooper
 		double[] PWs = new double[4];
 		
 		//IRs
-		private AnalogInput IRFront, IRLeft, IRRight, IRRSide, IRLSide;
+		private AnalogInput IRFront, IRLeft, IRRight, IRRSide, IRLSide, IRBack;
 
 		//passes in a reference to sample2view FROM sample2nativecamera. bad programming?
 		public IOIOThread(RoboEaterMain ui)
@@ -79,28 +78,24 @@ public class IOIOThread extends BaseIOIOLooper
 			//we can calculate the PW values right here in the IOIO loop
 			//INSTEAD OF from the controller class
 			//MUST BE IN THIS ORDER
-        	servos.calculateMountPW(screenX, screenY, currentMaxArea, currentX, currentY);
-        	servos.calculateWheelPW(currentMaxArea);
-        	servos.calculateMotorPW(currentMaxArea);
-        	servos.irc.calculateSideIR();
-			servos.irc.calculateLeftRightIR(); //must go after calcualteWheel
+			//Still using calculations done based on the tracking of the ball (reliant on mountX and mountY)
+			//Need to either change or make new methods.
+        	servos.calculateWheelPW();
+        	servos.calculateMotorPW();
+        	servos.irc.checkStates();
 			
 			servos.irc.setVoltage(IRFront.getVoltage(), IRLeft.getVoltage(), IRRight.getVoltage(), IRRSide.getVoltage(), IRLSide.getVoltage());
 			PWs = servos.getServoPW();
-			 int PWx = (int) PWs[0];
-			 int PWy = (int) PWs[1];
-			 int motorPW = (int) PWs[2];
-			 int wheelPW = (int) PWs[3];
+			 int motorPW = (int) PWs[0];
+			 int wheelPW = (int) PWs[1];
 
-			pwmOutputx.setPulseWidth(PWx);
-			pwmOutputy.setPulseWidth(PWy);
 			wheelOutput.setPulseWidth(wheelPW);
 
 			//for going between backwards and forwards
 			//WARNING: MINIMIZE GOING FROM FULL SPEED FORWARD TO FULL SPEED BACKWARDS
 			//DOING SO CAN DAMAGE THE GEARS
-			if (motorPW <  ServoCalculations.ACTUALSTOP)
-				motorOutput.setPulseWidth(ServoCalculations.ACTUALSTOP);
+			if (motorPW <  WallFollowingCalculations.ACTUALSTOP)
+				motorOutput.setPulseWidth(WallFollowingCalculations.ACTUALSTOP);
 			
 			motorOutput.setPulseWidth((int) motorPW);
 			lastMotorPW = (int) motorPW;
