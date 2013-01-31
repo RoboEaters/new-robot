@@ -105,11 +105,9 @@ public class WallFollowingCalculations {
 	}
 
 	public double[] getSetupInfo() {
-		double[] info = new double[4];
-		info[0] = MIDDLEPW;
-		info[1] = MIDDLEPW;
-		info[2] = ACTUALSTOP;
-		info[3] = MIDWHEEL;
+		double[] info = new double[2];
+		info[0] = ACTUALSTOP;
+		info[1] = MIDWHEEL;
 		return info;
 	}
 

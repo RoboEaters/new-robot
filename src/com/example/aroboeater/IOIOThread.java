@@ -29,6 +29,9 @@ public class IOIOThread extends BaseIOIOLooper
 		public IOIOThread(RoboEaterMain ui)
 		{
 			the_gui = ui;
+			
+			//following left
+			servos = new WallFollowingCalculations(1);
 
 			Thread.currentThread().setName("IOIOThread");
 			Log.d("IOIOThread", "IOIOThread has been created");
@@ -41,10 +44,8 @@ public class IOIOThread extends BaseIOIOLooper
 			try {
 				Log.d("IOIOThread", "Trying to finish setup of IOIO");
 				double[] info = servos.getSetupInfo();
-				double PWx = info[0];
-				double PWy = info[1];
-				double motorPW = info[2];
-				double wheelPW = info[3];
+				double motorPW = info[0];
+				double wheelPW = info[1];
 				
 				pwmOutputx = ioio_.openPwmOutput(11, 100);
 				pwmOutputy = ioio_.openPwmOutput(12, 100);
@@ -56,8 +57,6 @@ public class IOIOThread extends BaseIOIOLooper
 				IRRSide = ioio_.openAnalogInput(40);
 				IRLSide = ioio_.openAnalogInput(44);
 				
-				pwmOutputx.setPulseWidth((int)  PWx);
-				pwmOutputy.setPulseWidth((int)  PWy); 
 				motorOutput.setPulseWidth((int) motorPW);
 				wheelOutput.setPulseWidth((int) wheelPW);
 				servos.irc.setVoltage(IRFront.getVoltage(), IRLeft.getVoltage(), IRRight.getVoltage(), IRRSide.getVoltage(), IRLSide.getVoltage());
