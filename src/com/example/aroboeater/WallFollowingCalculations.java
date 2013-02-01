@@ -5,7 +5,7 @@ import android.util.Log;
 public class WallFollowingCalculations {
 	// final constants for PW's
 	public static final int MIDDLEPW = 1550;
-	public static final int FASTFORWARDMOTOR = 1400;
+	public static final int FASTFORWARDMOTOR = 1425;
 	public static final int FORWARDMOTOR = 1450;
 	public static final int BACKMOTOR = 1600;
 	public static final int FORWARDSTOP = 1550;
