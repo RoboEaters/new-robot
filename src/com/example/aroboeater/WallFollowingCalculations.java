@@ -44,14 +44,16 @@ public class WallFollowingCalculations {
 		} else {
 			followingRight = true;
 		}
-		motorPW = MIDDLEPW;
+		motorPW = ACTUALSTOP;
 		wheelPW = MIDWHEEL;
 		irc = new IRCalculations();
 	}
 
 	public double calculateWheelPW() {
-		double targetRangeFar = 0.8;
-		double targetRangeClose = 1.2;
+		double tooFar = 1.5;
+		double tooClose = 2.8;
+		double targetRangeFar = 2.0;
+		double targetRangeClose = 2.6 ;
 
 		// use IR Sensor values to determine wheel position.
 		// relative to how far away we are from the wall we are following.
@@ -67,12 +69,20 @@ public class WallFollowingCalculations {
 			// drift away from wall
 			else if (rValue > targetRangeClose) {
 				// hard coded slight left turn
-				wheelPW = 1600;
+				wheelPW = 1100;
+				
+				if(rValue > tooClose){
+					wheelPW = 1000;
+				}
 			}
 			// drift towards the wall
 			else if (rValue < targetRangeFar) {
 				// hard coded slight right turn
-				wheelPW = 1200;
+				wheelPW = 1600;
+				
+				if(rValue < tooFar){
+					wheelPW = 1800;
+				}
 			}
 		} else if (followingLeft) {
 			double lValue = irc.lSideVoltage;
@@ -159,8 +169,10 @@ public class WallFollowingCalculations {
 			} else if (followingRight) {
 				// too close time to turn
 				if (frontIRVoltage > 2.0) {
-					followingRight = false;
-					turningLeft = true;
+					//followingRight = false;
+					//turningLeft = true;
+					motorPW = ACTUALSTOP;
+
 				}
 			} else {
 				// NO CHECKS FOR TURNING IR LOGIC IMPLEMENTED YET

@@ -30,8 +30,8 @@ public class IOIOThread extends BaseIOIOLooper
 		{
 			the_gui = ui;
 			
-			//following left
-			servos = new WallFollowingCalculations(1);
+			//following right
+			servos = new WallFollowingCalculations(2);
 
 			Thread.currentThread().setName("IOIOThread");
 			Log.d("IOIOThread", "IOIOThread has been created");
