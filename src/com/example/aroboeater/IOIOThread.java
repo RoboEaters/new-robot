@@ -123,6 +123,7 @@ public class IOIOThread extends BaseIOIOLooper
 			values[7] = IRLSide.getVoltage();
 			values[8] = IRRSide.getVoltage();
 			values[9] = 0;
+			Log.d("VALUES", "new values GOING IN " + values);
 
 			//Need to post PW and IR readings back to the GUI Here!!
 			the_gui.setTextFields(values);
