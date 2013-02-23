@@ -1,4 +1,4 @@
-package com.example.aroboeater;
+package com.example.newrobot;
 
 import android.util.Log;
 
@@ -6,7 +6,7 @@ public class WallFollowingCalculations {
 	// final constants for PW's
 	public static final int MIDDLEPW = 1550;
 	public static final int FASTFORWARDMOTOR = 1425;
-	public static final int FORWARDMOTOR = 1450;
+	public static final int FORWARDMOTOR = 1550; // 1455
 	public static final int BACKMOTOR = 1600;
 	public static final int FORWARDSTOP = 1550;
 	public static final int BACKSTOP = 1550;
@@ -50,45 +50,92 @@ public class WallFollowingCalculations {
 	}
 
 	public double calculateWheelPW() {
-		double tooFar = 1.5;
-		double tooClose = 2.8;
-		double targetRangeFar = 2.0;
-		double targetRangeClose = 2.6 ;
+		double tooFar = 1.4;
+		double tooClose = 2.7;
+		double kindaFar = 1.6;
+		double kindaClose = 2.4;
+		double targetRangeFar = 2.2;
+		double targetRangeClose = 1.7;
 
 		// use IR Sensor values to determine wheel position.
 		// relative to how far away we are from the wall we are following.
 		if (goingForward) {
 			wheelPW = MIDWHEEL;
-		} else if (followingRight) {
-			double rValue = irc.rSideVoltage;
+		}
+		// else if (followingRight) {
+		// double frontValue = irc.frontIRVoltage;
+		// double rValue = irc.rSideVoltage;
+		//
+		// //robot is too close to the wall, back up straight and a little to
+		// the right
+		// if(frontValue > targetRangeClose)
+		// {
+		// wheelPW = MIDWHEEL + 200;
+		// }
+		//
+		// // in targetRange
+		// else if (rValue >= targetRangeFar && rValue <= targetRangeClose) {
+		// wheelPW = MIDWHEEL;
+		// }
+		// // drift away from wall
+		// else if (rValue > targetRangeClose) {
+		// // hard coded slight left turn
+		// wheelPW = MIDWHEEL - 300;
+		//
+		// if (rValue > tooClose) {
+		// wheelPW = MIDWHEEL - 400;
+		// }
+		// }
+		// // drift towards the wall
+		// else if (rValue < targetRangeFar) {
+		// // hard coded slight right turn
+		// wheelPW = MIDWHEEL + 300;
+		//
+		// if (rValue < tooFar) {
+		// wheelPW = MIDWHEEL + 400;
+		// }
+		// }
+		// }
+		else if (followingLeft) {
+			double frontValue = irc.frontIRVoltage;
+			double lValue = irc.lSideVoltage;
+
+			// //robot is too close to the wall, back up straight and a little
+			// to the left
+			// if(frontValue > targetRangeClose)
+			// {
+			// wheelPW = MIDWHEEL - 200;
+			// }
 
 			// in targetRange
-			if (rValue >= targetRangeFar && rValue <= targetRangeClose) {
+			if (lValue <= targetRangeFar && lValue >= targetRangeClose) {
 				wheelPW = MIDWHEEL;
 			}
 			// drift away from wall
-			else if (rValue > targetRangeClose) {
-				// hard coded slight left turn
-				wheelPW = 1100;
-				
-				if(rValue > tooClose){
-					wheelPW = 1000;
-				}
+			else if (lValue > targetRangeClose) {
+				// slight right turn
+				wheelPW = MIDWHEEL - 300;
+
+				// if (lValue > tooClose) {
+				// wheelPW = MIDWHEEL + 400;
+				// }
+				// else if(lValue > kindaClose){
+				// wheelPW = MIDWHEEL + 300;
+				// }
 			}
 			// drift towards the wall
-			else if (rValue < targetRangeFar) {
-				// hard coded slight right turn
-				wheelPW = 1600;
-				
-				if(rValue < tooFar){
-					wheelPW = 1800;
-				}
-			}
-		} else if (followingLeft) {
-			double lValue = irc.lSideVoltage;
-		} else if (turningLeft) {
+			else if (lValue < targetRangeFar) {
+				// slight left turn
+				wheelPW = MIDWHEEL + 200;
 
-		} else if (turningRight) {
+				// if (lValue < tooFar) {
+				// wheelPW = MIDWHEEL - 400;
+				// }
+				// else if(lValue < kindaFar)
+				// {
+				// wheelPW = MIDWHEEL - 300;
+				// }
+			}
 
 		}
 
@@ -96,11 +143,17 @@ public class WallFollowingCalculations {
 	}
 
 	public double calculateMotorPW() {
+		double frontValue = irc.frontIRVoltage;
+		double lDiagValue = irc.leftIRVoltage;
+		double lRightValue = irc.rightIRVoltage;
+
 		if (goingForward || followingLeft || followingRight) {
 			motorPW = FORWARDMOTOR;
-		} else if (turningLeft || turningRight) {
-			// use IR Sensor values to determine whether or not
-			// not the vehicle should be going forward or backward
+		}
+
+		// HARD CODED FRONT IR CHECK FOR BACKING UP
+		else if (frontValue > 2.0) {
+			motorPW = ACTUALSTOP;
 		}
 
 		return motorPW;
@@ -139,7 +192,7 @@ public class WallFollowingCalculations {
 		}
 
 		public void setVoltage(float IRFront, float IRLeft, float IRRight,
-				float IRLSide, float IRRSide) {
+				float IRRSide, float IRLSide) {
 			frontIRVoltage = IRFront;
 			leftIRVoltage = IRLeft;
 			rightIRVoltage = IRRight;
@@ -155,28 +208,29 @@ public class WallFollowingCalculations {
 
 					// check the higher diag IR
 					if (leftIRVoltage > rightIRVoltage) {
-						turningLeft = true;
+						followingLeft = true;
 					} else {
-						turningRight = true;
+						followingRight = true;
 					}
 				}
-			} else if (followingLeft) {
-				// too close time to turn
-				if (frontIRVoltage > 2.0) {
-					followingLeft = false;
-					turningRight = true;
-				}
-			} else if (followingRight) {
-				// too close time to turn
-				if (frontIRVoltage > 2.0) {
-					//followingRight = false;
-					//turningLeft = true;
-					motorPW = ACTUALSTOP;
-
-				}
-			} else {
-				// NO CHECKS FOR TURNING IR LOGIC IMPLEMENTED YET
 			}
+			// else if (followingLeft) {
+			// // too close time to turn
+			// if (frontIRVoltage > 2.0) {
+			// followingLeft = false;
+			// turningRight = true;
+			// }
+			// } else if (followingRight) {
+			// // too close time to turn
+			// if (frontIRVoltage > 2.0) {
+			// // followingRight = false;
+			// // turningLeft = true;
+			// motorPW = ACTUALSTOP;
+			//
+			// }
+			// } else {
+			// // NO CHECKS FOR TURNING IR LOGIC IMPLEMENTED YET
+			// }
 		}
 
 	}

@@ -1,4 +1,4 @@
-package com.example.aroboeater;
+package com.example.newrobot;
 
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.IOIOLooperProvider;
@@ -30,10 +30,10 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 
 	// UI stuff
 	TextView mountX, mountY, motorPW, wheelPW, frontIR, backIR, sideRIR,
-			sideLIR, diagRIR, diagLIR;
+			sideLIR, diagRIR, diagLIR, halifact;
 	TextView mountXValue, mountYValue, motorPWValue, wheelPWValue,
 			frontIRValue, backIRValue, sideRIRValue, sideLIRValue,
-			diagRIRValue, diagLIRValue;
+			diagRIRValue, diagLIRValue, halifactValue;
 	LinearLayout head_parent;
 	LinearLayout UI;
 	LinearLayout UIValues;
@@ -103,23 +103,25 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 	// 7:Side Left IR
 	// 8:Side Right IR
 	// 9:Back IR
-	public void setTextFields(double[] values) {
+	public void setTextFields(double[] values, Boolean halifact) {
 		// This method is being called often by the IOIO thread,
 		// aka asking the UI thread to do a lot of work, may lag with more
 		// updates.
 		final double[] val = values;
+		final Boolean hal = halifact;
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				Log.d("VALUES", "WENT IN! " + val);
 				motorPWValue.setText("" + val[2]);
-				wheelPWValue.setText("" + val[3]); 
+				wheelPWValue.setText("" + val[3]);
 				frontIRValue.setText("" + val[4]);
 				diagLIRValue.setText("" + val[5]);
 				diagRIRValue.setText("" + val[6]);
 				sideLIRValue.setText("" + val[7]);
 				sideRIRValue.setText("" + val[8]);
 				backIRValue.setText("" + val[9]);
+				halifactValue.setText("" + hal);
 			}
 		});
 	}
@@ -144,8 +146,8 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		UIValues.setLayoutParams(lp);
 		UIValues.setGravity(Gravity.CENTER);
 
-		TextView[] names = new TextView[10];
-		TextView[] values = new TextView[10];
+		TextView[] names = new TextView[11];
+		TextView[] values = new TextView[11];
 
 		mountXValue = new TextView(this);
 		mountYValue = new TextView(this);
@@ -157,7 +159,8 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		sideLIRValue = new TextView(this);
 		diagRIRValue = new TextView(this);
 		diagLIRValue = new TextView(this);
-		
+		halifactValue = new TextView(this);
+
 		mountX = new TextView(this);
 		mountY = new TextView(this);
 		motorPW = new TextView(this);
@@ -168,7 +171,8 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		sideLIR = new TextView(this);
 		diagRIR = new TextView(this);
 		diagLIR = new TextView(this);
-		
+		halifact = new TextView(this);
+
 		values[0] = mountXValue;
 		names[0] = mountX;
 		values[1] = mountYValue;
@@ -189,23 +193,22 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		names[8] = diagRIR;
 		values[9] = diagLIRValue;
 		names[9] = diagLIR;
-		
-		for (TextView t : names){
+		values[10] = halifactValue;
+		names[10] = halifact;
+
+		for (TextView t : names) {
 			t.setPadding((int) (5 * scale), (int) (5 * scale),
 					(int) (5 * scale), (int) (5 * scale));
 			t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
 			UI.addView(t);
 		}
-		
-		for (TextView t : values){
+
+		for (TextView t : values) {
 			t.setPadding((int) (5 * scale), (int) (5 * scale),
 					(int) (5 * scale), (int) (5 * scale));
 			t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
 			UIValues.addView(t);
 		}
-
-
-		
 
 		mountX.setText("Mount-X PW");
 		mountY.setText("Mount-Y PW");
@@ -217,13 +220,13 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		sideLIR.setText("Side Left IR");
 		diagRIR.setText("Diag Right IR");
 		diagLIR.setText("Diag Left IR");
-
+		halifact.setText("Halifact Sensor");
 
 		// frame.addView(viewScreen);
 		head_parent.addView(UI);
 		head_parent.addView(UIValues);
 		setContentView(head_parent);
-		
+
 	}
 
 	/****************************************************** functions from IOIOActivity *********************************************************************************/

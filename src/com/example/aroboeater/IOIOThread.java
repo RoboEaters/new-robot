@@ -1,6 +1,7 @@
-package com.example.aroboeater;
+package com.example.newrobot;
 import android.util.Log;
 import ioio.lib.api.AnalogInput;
+import ioio.lib.api.DigitalInput;
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
 import ioio.lib.api.PwmOutput;
@@ -24,14 +25,16 @@ public class IOIOThread extends BaseIOIOLooper
 		
 		//IRs
 		private AnalogInput IRFront, IRLeft, IRRight, IRRSide, IRLSide, IRBack;
+		
+		private AnalogInput halifactSensor;
 
 		//passes in a reference to sample2view FROM sample2nativecamera. bad programming?
 		public IOIOThread(RoboEaterMain ui)
 		{
 			the_gui = ui;
 			
-			//following right
-			servos = new WallFollowingCalculations(2);
+			//following left
+			servos = new WallFollowingCalculations(1);
 
 			Thread.currentThread().setName("IOIOThread");
 			Log.d("IOIOThread", "IOIOThread has been created");
@@ -52,10 +55,11 @@ public class IOIOThread extends BaseIOIOLooper
 				motorOutput = ioio_.openPwmOutput(5, 100);
 				wheelOutput = ioio_.openPwmOutput(10,100);
 				IRFront = ioio_.openAnalogInput(43);
-				IRLeft = ioio_.openAnalogInput(42);
-				IRRight = ioio_.openAnalogInput(41);
-				IRRSide = ioio_.openAnalogInput(40);
-				IRLSide = ioio_.openAnalogInput(44);
+				IRLeft = ioio_.openAnalogInput(44);
+				IRRight = ioio_.openAnalogInput(40);
+				IRRSide = ioio_.openAnalogInput(41);
+				IRLSide = ioio_.openAnalogInput(42);
+				halifactSensor = ioio_.openAnalogInput(9);
 				
 				motorOutput.setPulseWidth((int) motorPW);
 				wheelOutput.setPulseWidth((int) wheelPW);
@@ -112,6 +116,7 @@ public class IOIOThread extends BaseIOIOLooper
 			//7:Side Left IR
 			//8:Side Right IR
 			//9:Back IR
+			//10:Halifact Sensor
 			double[] values = new double[10];
 			values[0] = 0;
 			values[1] = 0;
@@ -124,9 +129,13 @@ public class IOIOThread extends BaseIOIOLooper
 			values[8] = IRRSide.getVoltage();
 			values[9] = 0;
 			Log.d("VALUES", "new values GOING IN " + values);
+			Boolean halifact = false;
+			double halifactVolt = halifactSensor.getVoltage();
+			if(halifactVolt > 0.35)
+			halifact = true;
 
 			//Need to post PW and IR readings back to the GUI Here!!
-			the_gui.setTextFields(values);
+			the_gui.setTextFields(values, halifact);
 			
 			//determines how fast calculations are done
 			Thread.sleep(50);
