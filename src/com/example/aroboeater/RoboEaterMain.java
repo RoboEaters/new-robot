@@ -1,5 +1,7 @@
 package com.example.newrobot;
 
+import java.text.DecimalFormat;
+
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.IOIOLooperProvider;
 import ioio.lib.util.android.IOIOAndroidApplicationHelper;
@@ -7,6 +9,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -34,6 +37,8 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 	TextView mountXValue, mountYValue, motorPWValue, wheelPWValue,
 			frontIRValue, backIRValue, sideRIRValue, sideLIRValue,
 			diagRIRValue, diagLIRValue, halifactValue;
+	TextView stateText;
+	TextView state;
 	LinearLayout head_parent;
 	LinearLayout UI;
 	LinearLayout UIValues;
@@ -41,12 +46,14 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 	// Threadings
 	IOIOThread ioio_thread;
 
+	DecimalFormat df = new DecimalFormat("#.####"); // format to print voltages
+
 	// BLUETOOTH
 
 	// Local Bluetooth adapter
 	private BluetoothAdapter mBluetoothAdapter = null;
 	// Member object for the chat services
-	private BluetoothService mChatService = null;
+	// private BluetoothService mChatService = null;
 	private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
 	private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
 	private static final int REQUEST_ENABLE_BT = 3;
@@ -89,7 +96,7 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 			finish();
 			return;
 		}
-		ensureDiscoverable(); // makes the device discoverable
+		// ensureDiscoverable(); // makes the device discoverable
 		menuSelection = 0; // set the inital selection
 	}
 
@@ -103,25 +110,28 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 	// 7:Side Left IR
 	// 8:Side Right IR
 	// 9:Back IR
-	public void setTextFields(double[] values, Boolean halifact) {
+	public void setTextFields(double[] values, Boolean halifact, final String currentState) {
 		// This method is being called often by the IOIO thread,
 		// aka asking the UI thread to do a lot of work, may lag with more
 		// updates.
 		final double[] val = values;
 		final Boolean hal = halifact;
 		runOnUiThread(new Runnable() {
+			/* (non-Javadoc)
+			 * @see java.lang.Runnable#run()
+			 */
 			@Override
 			public void run() {
-				Log.d("VALUES", "WENT IN! " + val);
-				motorPWValue.setText("" + val[2]);
-				wheelPWValue.setText("" + val[3]);
-				frontIRValue.setText("" + val[4]);
-				diagLIRValue.setText("" + val[5]);
-				diagRIRValue.setText("" + val[6]);
-				sideLIRValue.setText("" + val[7]);
-				sideRIRValue.setText("" + val[8]);
-				backIRValue.setText("" + val[9]);
+				motorPWValue.setText("" + df.format(val[2]));
+				wheelPWValue.setText("" + df.format(val[3]));
+				frontIRValue.setText("" + df.format(val[4]));
+				diagLIRValue.setText("" + df.format(val[5]));
+				diagRIRValue.setText("" + df.format(val[6]));
+				sideLIRValue.setText("" + df.format(val[7]));
+				sideRIRValue.setText("" + df.format(val[8]));
+				backIRValue.setText("" + df.format(val[9]));
 				halifactValue.setText("" + hal);
+				state.setText("" + currentState);
 			}
 		});
 	}
@@ -146,8 +156,8 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		UIValues.setLayoutParams(lp);
 		UIValues.setGravity(Gravity.CENTER);
 
-		TextView[] names = new TextView[11];
-		TextView[] values = new TextView[11];
+		TextView[] names = new TextView[12];
+		TextView[] values = new TextView[12];
 
 		mountXValue = new TextView(this);
 		mountYValue = new TextView(this);
@@ -160,6 +170,7 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		diagRIRValue = new TextView(this);
 		diagLIRValue = new TextView(this);
 		halifactValue = new TextView(this);
+		stateText = new TextView(this);
 
 		mountX = new TextView(this);
 		mountY = new TextView(this);
@@ -172,6 +183,7 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		diagRIR = new TextView(this);
 		diagLIR = new TextView(this);
 		halifact = new TextView(this);
+		state = new TextView(this);
 
 		values[0] = mountXValue;
 		names[0] = mountX;
@@ -195,6 +207,8 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		names[9] = diagLIR;
 		values[10] = halifactValue;
 		names[10] = halifact;
+		values[11] = state;
+		names[11] = stateText;
 
 		for (TextView t : names) {
 			t.setPadding((int) (5 * scale), (int) (5 * scale),
@@ -221,6 +235,7 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		diagRIR.setText("Diag Right IR");
 		diagLIR.setText("Diag Left IR");
 		halifact.setText("Halifact Sensor");
+		stateText.setText("State");
 
 		// frame.addView(viewScreen);
 		head_parent.addView(UI);
@@ -238,6 +253,7 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		// of the IR and PW calculations to the textViews in the main
 		// applications UI
 		ioio_thread = new IOIOThread(app);
+		Log.d("YOLO TEST", "YOLO TEST");
 		return ioio_thread;// send them the viewscreen thread
 	}
 
@@ -246,135 +262,18 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		return createIOIOLooper();
 	}
 
-	private void setupChat() {
-		Log.d(TAG, "setupChat()");
-		// Initialize the BluetoothService to perform bluetooth connections
-		mChatService = new BluetoothService(this, mHandler);
-		// Initialize the buffer for outgoing messages
-		mOutStringBuffer = new StringBuffer("");
-	}
-
-	private final Handler mHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-			case MESSAGE_STATE_CHANGE:
-				if (true)
-					Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
-				switch (msg.arg1) {
-				case BluetoothService.STATE_CONNECTED:
-					break;
-				case BluetoothService.STATE_CONNECTING:
-					break;
-				case BluetoothService.STATE_LISTEN:
-				case BluetoothService.STATE_NONE:
-					break;
-				}
-				break;
-			case MESSAGE_READ:
-				byte[] readBuf = (byte[]) msg.obj;
-				// construct a string from the valid bytes in the buffer
-				String readMessage = new String(readBuf, 0, msg.arg1);
-				try {
-					if (!(readMessage == null))
-						menuSelection = Integer.parseInt(readMessage);
-				} catch (NumberFormatException e) {
-					Log.i("bluetooth pass", "Not a valid number");
-				}
-				Log.d("REMOVED CODE",
-						"was trying to use bluetoothSelect method");
-				// bluetoothSelect();
-				Log.i("Them: " + mConnectedDeviceName, readMessage);
-				break;
-			case MESSAGE_DEVICE_NAME:
-				// save the connected device's name
-				mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
-				Toast.makeText(getApplicationContext(),
-						"Connected to " + mConnectedDeviceName,
-						Toast.LENGTH_SHORT).show();
-				break;
-			case MESSAGE_TOAST:
-				Toast.makeText(getApplicationContext(),
-						msg.getData().getString(TOAST), Toast.LENGTH_SHORT)
-						.show();
-				break;
-			}
-		}
-	};
-
-	private void connectDevice(Intent data, boolean secure) {
-		// Get the device MAC address
-		String address = data.getExtras().getString(
-				BluetoothDeviceListActivity.EXTRA_DEVICE_ADDRESS);
-		// Get the BLuetoothDevice object
-		BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-		// Attempt to connect to the device
-		mChatService.connect(device, secure);
-	}
-
-	private void ensureDiscoverable() {
-		if (true)
-			Log.d(TAG, "ensure discoverable");
-		if (mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-			Intent discoverableIntent = new Intent(
-					BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-			discoverableIntent.putExtra(
-					BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-			startActivity(discoverableIntent);
-		}
-	}
-
 	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (true)
-			Log.d(TAG, "onActivityResult " + resultCode);
-		switch (requestCode) {
-		case REQUEST_CONNECT_DEVICE_SECURE:
-			// When BluetoothDeviceListActivity returns with a device to connect
-			if (resultCode == Activity.RESULT_OK) {
-				connectDevice(data, true);
-			}
-			break;
-		case REQUEST_CONNECT_DEVICE_INSECURE:
-			// When BluetoothDeviceListActivity returns with a device to connect
-			if (resultCode == Activity.RESULT_OK) {
-				connectDevice(data, false);
-			}
-			break;
-		case REQUEST_ENABLE_BT:
-			// When the request to enable Bluetooth returns
-			if (resultCode == Activity.RESULT_OK) {
-				// Bluetooth is now enabled, so set up a chat session
-				setupChat();
-			} else {
-				// User did not enable Bluetooth or an error occured
-				Log.d(TAG, "BT not enabled");
-				// Toast.makeText(this, R.string.bt_not_enabled_leaving,
-				// Toast.LENGTH_SHORT).show();
-				finish();
-			}
-		}
+	public void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
 	}
 
+	
 	// BLUETOOTH
 	@Override
 	public synchronized void onResume() {
 		super.onResume();
 		if (true)
 			Log.e(TAG, "+ ON RESUME +");
-
-		// Performing this check in onResume() covers the case in which BT was
-		// not enabled during onStart(), so we were paused to enable it...
-		// onResume() will be called when ACTION_REQUEST_ENABLE activity
-		// returns.
-		if (mChatService != null) {
-			// Only if the state is STATE_NONE, do we know that we haven't
-			// started already
-			if (mChatService.getState() == BluetoothService.STATE_NONE) {
-				// Start the Bluetooth chat services
-				mChatService.start();
-			}
-		}
 	}
 
 	@Override
@@ -388,8 +287,6 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		helper_.destroy();
 
 		super.onDestroy();
-		if (mChatService != null)
-			mChatService.stop();
 	}
 
 	@Override
@@ -398,17 +295,6 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		if (true)
 			Log.e(TAG, "++ ON START ++");
 
-		// If BT is not on, request that it be enabled.
-		// setupChat() will then be called during onActivityResult
-		if (!mBluetoothAdapter.isEnabled()) {
-			Intent enableIntent = new Intent(
-					BluetoothAdapter.ACTION_REQUEST_ENABLE);
-			startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-			// Otherwise, setup the chat session
-		} else {
-			if (mChatService == null)
-				setupChat();
-		}
 		helper_.start();
 	}
 
@@ -419,5 +305,4 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 			helper_.restart();
 		}
 	}
-
 }

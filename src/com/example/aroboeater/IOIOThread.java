@@ -1,12 +1,13 @@
 package com.example.newrobot;
-import android.util.Log;
 import ioio.lib.api.AnalogInput;
 import ioio.lib.api.DigitalInput;
-import ioio.lib.api.DigitalOutput;
-import ioio.lib.api.IOIO;
 import ioio.lib.api.PwmOutput;
 import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.util.BaseIOIOLooper;
+
+import java.text.DecimalFormat;
+
+import android.util.Log;
 
 public class IOIOThread extends BaseIOIOLooper 
 {
@@ -16,17 +17,14 @@ public class IOIOThread extends BaseIOIOLooper
 		private PwmOutput wheelOutput;
 		private static RoboEaterMain the_gui;
 		private static WallFollowingCalculations servos;
-		 //600 TO 2500 
 		
-		boolean goingBackwards;
-		
-		int lastMotorPW;
 		double[] PWs = new double[4];
 		
 		//IRs
 		private AnalogInput IRFront, IRLeft, IRRight, IRRSide, IRLSide, IRBack;
 		
-		private AnalogInput halifactSensor;
+		private DigitalInput halifactSensor;
+		private int lastMotorPW;
 
 		//passes in a reference to sample2view FROM sample2nativecamera. bad programming?
 		public IOIOThread(RoboEaterMain ui)
@@ -38,7 +36,6 @@ public class IOIOThread extends BaseIOIOLooper
 
 			Thread.currentThread().setName("IOIOThread");
 			Log.d("IOIOThread", "IOIOThread has been created");
-
 		}
 		
 		@Override
@@ -55,11 +52,11 @@ public class IOIOThread extends BaseIOIOLooper
 				motorOutput = ioio_.openPwmOutput(5, 100);
 				wheelOutput = ioio_.openPwmOutput(10,100);
 				IRFront = ioio_.openAnalogInput(43);
-				IRLeft = ioio_.openAnalogInput(44);
+				IRLeft = ioio_.openAnalogInput(44); //diag
 				IRRight = ioio_.openAnalogInput(40);
 				IRRSide = ioio_.openAnalogInput(41);
-				IRLSide = ioio_.openAnalogInput(42);
-				halifactSensor = ioio_.openAnalogInput(9);
+				IRLSide = ioio_.openAnalogInput(42); 
+				halifactSensor = ioio_.openDigitalInput(9); //normally 9
 				
 				motorOutput.setPulseWidth((int) motorPW);
 				wheelOutput.setPulseWidth((int) wheelPW);
@@ -83,14 +80,16 @@ public class IOIOThread extends BaseIOIOLooper
 			//MUST BE IN THIS ORDER
 			//Still using calculations done based on the tracking of the ball (reliant on mountX and mountY)
 			//Need to either change or make new methods.
-        	servos.calculateWheelPW();
-        	servos.calculateMotorPW();
-        	servos.irc.checkStates();
-			
+//        	servos.calculateWheelPW();
+//        	servos.calculateMotorPW();
 			servos.irc.setVoltage(IRFront.getVoltage(), IRLeft.getVoltage(), IRRight.getVoltage(), IRRSide.getVoltage(), IRLSide.getVoltage());
+        	servos.irc.checkStates();
+        	
+			
 			PWs = servos.getServoPW();
 			 int motorPW = (int) PWs[0];
 			 int wheelPW = (int) PWs[1];
+
 
 			wheelOutput.setPulseWidth(wheelPW);
 
@@ -128,16 +127,21 @@ public class IOIOThread extends BaseIOIOLooper
 			values[7] = IRLSide.getVoltage();
 			values[8] = IRRSide.getVoltage();
 			values[9] = 0;
-			Log.d("VALUES", "new values GOING IN " + values);
+			
 			Boolean halifact = false;
-			double halifactVolt = halifactSensor.getVoltage();
-			if(halifactVolt > 0.35)
-			halifact = true;
+//
+			halifact = halifactSensor.read();
+
+//
+//			if(halifactVolt > 0.35)
+//				halifact = true;
 
 			//Need to post PW and IR readings back to the GUI Here!!
-			the_gui.setTextFields(values, halifact);
+
+			the_gui.setTextFields(values, halifact, WallFollowingCalculations.currentState);
 			
 			//determines how fast calculations are done
 			Thread.sleep(50);
+			
 		}
 	}
